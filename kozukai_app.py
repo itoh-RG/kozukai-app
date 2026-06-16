@@ -153,11 +153,18 @@ class AddEditView(ui.View):
         self._section_label(y, W, '日付')
         y += 26
 
-        self.date_picker = ui.DatePicker(frame=(0, y, W, 160))
+        self.date_picker = ui.DatePicker()
         self.date_picker.mode = 'date'
-        dt = (datetime.strptime(self.expense['date'], '%Y-%m-%d')
-              if self.expense else datetime.now())
-        self.date_picker.date = dt.timestamp()
+        self.date_picker.frame = (0, y, W, 160)
+        if self.expense:
+            dt = datetime.strptime(self.expense['date'], '%Y-%m-%d')
+            try:
+                self.date_picker.date = dt
+            except Exception:
+                try:
+                    self.date_picker.date = dt.timestamp()
+                except Exception:
+                    pass
         self.scroll.add_subview(self.date_picker)
         y += 168
 
@@ -259,7 +266,9 @@ class AddEditView(ui.View):
             console.hud_alert('内容を入力してください', 'error', 1.5)
             return
 
-        date_str = datetime.fromtimestamp(self.date_picker.date).strftime('%Y-%m-%d')
+        d = self.date_picker.date
+        date_str = (d.strftime('%Y-%m-%d') if hasattr(d, 'strftime')
+                    else datetime.fromtimestamp(d).strftime('%Y-%m-%d'))
         wasteful  = self.waste_sw.value
 
         if self.expense:
@@ -311,22 +320,32 @@ class CustomPeriodView(ui.View):
             y += 26
 
         section_lbl('開始日')
-        self.start_picker = ui.DatePicker(frame=(0, y, W, 160))
+        self.start_picker = ui.DatePicker()
         self.start_picker.mode = 'date'
+        self.start_picker.frame = (0, y, W, 160)
+        dt_s = datetime.strptime(self._start_str, '%Y-%m-%d')
         try:
-            self.start_picker.date = datetime.strptime(self._start_str, '%Y-%m-%d').timestamp()
+            self.start_picker.date = dt_s
         except Exception:
-            self.start_picker.date = datetime.now().timestamp()
+            try:
+                self.start_picker.date = dt_s.timestamp()
+            except Exception:
+                pass
         self.add_subview(self.start_picker)
         y += 168
 
         section_lbl('終了日')
-        self.end_picker = ui.DatePicker(frame=(0, y, W, 160))
+        self.end_picker = ui.DatePicker()
         self.end_picker.mode = 'date'
+        self.end_picker.frame = (0, y, W, 160)
+        dt_e = datetime.strptime(self._end_str, '%Y-%m-%d')
         try:
-            self.end_picker.date = datetime.strptime(self._end_str, '%Y-%m-%d').timestamp()
+            self.end_picker.date = dt_e
         except Exception:
-            self.end_picker.date = datetime.now().timestamp()
+            try:
+                self.end_picker.date = dt_e.timestamp()
+            except Exception:
+                pass
         self.add_subview(self.end_picker)
         y += 168
 
@@ -340,8 +359,12 @@ class CustomPeriodView(ui.View):
         self.add_subview(apply_btn)
 
     def _apply(self, sender):
-        s = datetime.fromtimestamp(self.start_picker.date).strftime('%Y-%m-%d')
-        e = datetime.fromtimestamp(self.end_picker.date).strftime('%Y-%m-%d')
+        ds = self.start_picker.date
+        de = self.end_picker.date
+        s = (ds.strftime('%Y-%m-%d') if hasattr(ds, 'strftime')
+             else datetime.fromtimestamp(ds).strftime('%Y-%m-%d'))
+        e = (de.strftime('%Y-%m-%d') if hasattr(de, 'strftime')
+             else datetime.fromtimestamp(de).strftime('%Y-%m-%d'))
         if s > e:
             s, e = e, s
         self.on_apply(s, e)
