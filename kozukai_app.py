@@ -155,10 +155,9 @@ class AddEditView(ui.View):
 
         self.date_picker = ui.DatePicker(frame=(0, y, W, 160))
         self.date_picker.mode = 'date'
-        self.date_picker.date = (
-            datetime.strptime(self.expense['date'], '%Y-%m-%d')
-            if self.expense else datetime.now()
-        )
+        dt = (datetime.strptime(self.expense['date'], '%Y-%m-%d')
+              if self.expense else datetime.now())
+        self.date_picker.date = dt.timestamp()
         self.scroll.add_subview(self.date_picker)
         y += 168
 
@@ -260,7 +259,7 @@ class AddEditView(ui.View):
             console.hud_alert('内容を入力してください', 'error', 1.5)
             return
 
-        date_str = self.date_picker.date.strftime('%Y-%m-%d')
+        date_str = datetime.fromtimestamp(self.date_picker.date).strftime('%Y-%m-%d')
         wasteful  = self.waste_sw.value
 
         if self.expense:
@@ -315,9 +314,9 @@ class CustomPeriodView(ui.View):
         self.start_picker = ui.DatePicker(frame=(0, y, W, 160))
         self.start_picker.mode = 'date'
         try:
-            self.start_picker.date = datetime.strptime(self._start_str, '%Y-%m-%d')
+            self.start_picker.date = datetime.strptime(self._start_str, '%Y-%m-%d').timestamp()
         except Exception:
-            self.start_picker.date = datetime.now()
+            self.start_picker.date = datetime.now().timestamp()
         self.add_subview(self.start_picker)
         y += 168
 
@@ -325,9 +324,9 @@ class CustomPeriodView(ui.View):
         self.end_picker = ui.DatePicker(frame=(0, y, W, 160))
         self.end_picker.mode = 'date'
         try:
-            self.end_picker.date = datetime.strptime(self._end_str, '%Y-%m-%d')
+            self.end_picker.date = datetime.strptime(self._end_str, '%Y-%m-%d').timestamp()
         except Exception:
-            self.end_picker.date = datetime.now()
+            self.end_picker.date = datetime.now().timestamp()
         self.add_subview(self.end_picker)
         y += 168
 
@@ -341,8 +340,8 @@ class CustomPeriodView(ui.View):
         self.add_subview(apply_btn)
 
     def _apply(self, sender):
-        s = self.start_picker.date.strftime('%Y-%m-%d')
-        e = self.end_picker.date.strftime('%Y-%m-%d')
+        s = datetime.fromtimestamp(self.start_picker.date).strftime('%Y-%m-%d')
+        e = datetime.fromtimestamp(self.end_picker.date).strftime('%Y-%m-%d')
         if s > e:
             s, e = e, s
         self.on_apply(s, e)
