@@ -150,23 +150,19 @@ class AddEditView(ui.View):
         y = 20
 
         # ── 日付 ──────────────────────────────────────────────────────────
-        self._section_label(y, W, '日付')
+        self._section_label(y, W, '日付（YYYY-MM-DD）')
         y += 26
 
-        self.date_picker = ui.DatePicker()
-        self.date_picker.mode = 'date'
-        self.date_picker.frame = (0, y, W, 160)
-        if self.expense:
-            dt = datetime.strptime(self.expense['date'], '%Y-%m-%d')
-            try:
-                self.date_picker.date = dt
-            except Exception:
-                try:
-                    self.date_picker.date = dt.timestamp()
-                except Exception:
-                    pass
-        self.scroll.add_subview(self.date_picker)
-        y += 168
+        self.date_tf = ui.TextField(frame=(16, y, W - 32, 46))
+        self.date_tf.placeholder = '例: 2025-01-15'
+        self.date_tf.border_width = 0.5
+        self.date_tf.border_color = (0.8, 0.8, 0.8, 1)
+        self.date_tf.corner_radius = 8
+        self.date_tf.font = ('<system>', 22)
+        self.date_tf.text = (self.expense['date'] if self.expense
+                             else datetime.now().strftime('%Y-%m-%d'))
+        self.scroll.add_subview(self.date_tf)
+        y += 54
 
         # ── 金額 ──────────────────────────────────────────────────────────
         self._section_label(y, W, '金額（円）')
@@ -176,7 +172,7 @@ class AddEditView(ui.View):
         self.amount_tf.placeholder = '例: 500'
         self.amount_tf.text_alignment = ui.ALIGN_RIGHT
         self.amount_tf.border_width = 0.5
-        self.amount_tf.border_color = '#ccc'
+        self.amount_tf.border_color = (0.8, 0.8, 0.8, 1)
         self.amount_tf.corner_radius = 8
         self.amount_tf.font = ('<system>', 22)
         if self.expense:
@@ -191,7 +187,7 @@ class AddEditView(ui.View):
         self.desc_tf = ui.TextField(frame=(16, y, W - 32, 46))
         self.desc_tf.placeholder = '例: コーヒー、ランチ、本...'
         self.desc_tf.border_width = 0.5
-        self.desc_tf.border_color = '#ccc'
+        self.desc_tf.border_color = (0.8, 0.8, 0.8, 1)
         self.desc_tf.corner_radius = 8
         self.desc_tf.font = ('<system>', 17)
         if self.expense:
@@ -266,9 +262,12 @@ class AddEditView(ui.View):
             console.hud_alert('内容を入力してください', 'error', 1.5)
             return
 
-        d = self.date_picker.date
-        date_str = (d.strftime('%Y-%m-%d') if hasattr(d, 'strftime')
-                    else datetime.fromtimestamp(d).strftime('%Y-%m-%d'))
+        date_str = self.date_tf.text.strip()
+        try:
+            datetime.strptime(date_str, '%Y-%m-%d')
+        except ValueError:
+            console.hud_alert('日付は YYYY-MM-DD 形式で入力してください', 'error', 2)
+            return
         wasteful  = self.waste_sw.value
 
         if self.expense:
@@ -319,35 +318,25 @@ class CustomPeriodView(ui.View):
             self.add_subview(lbl)
             y += 26
 
-        section_lbl('開始日')
-        self.start_picker = ui.DatePicker()
-        self.start_picker.mode = 'date'
-        self.start_picker.frame = (0, y, W, 160)
-        dt_s = datetime.strptime(self._start_str, '%Y-%m-%d')
-        try:
-            self.start_picker.date = dt_s
-        except Exception:
-            try:
-                self.start_picker.date = dt_s.timestamp()
-            except Exception:
-                pass
-        self.add_subview(self.start_picker)
-        y += 168
+        section_lbl('開始日（YYYY-MM-DD）')
+        self.start_tf = ui.TextField(frame=(16, y, W - 32, 46))
+        self.start_tf.border_width = 0.5
+        self.start_tf.border_color = (0.8, 0.8, 0.8, 1)
+        self.start_tf.corner_radius = 8
+        self.start_tf.font = ('<system>', 20)
+        self.start_tf.text = self._start_str
+        self.add_subview(self.start_tf)
+        y += 54
 
-        section_lbl('終了日')
-        self.end_picker = ui.DatePicker()
-        self.end_picker.mode = 'date'
-        self.end_picker.frame = (0, y, W, 160)
-        dt_e = datetime.strptime(self._end_str, '%Y-%m-%d')
-        try:
-            self.end_picker.date = dt_e
-        except Exception:
-            try:
-                self.end_picker.date = dt_e.timestamp()
-            except Exception:
-                pass
-        self.add_subview(self.end_picker)
-        y += 168
+        section_lbl('終了日（YYYY-MM-DD）')
+        self.end_tf = ui.TextField(frame=(16, y, W - 32, 46))
+        self.end_tf.border_width = 0.5
+        self.end_tf.border_color = (0.8, 0.8, 0.8, 1)
+        self.end_tf.corner_radius = 8
+        self.end_tf.font = ('<system>', 20)
+        self.end_tf.text = self._end_str
+        self.add_subview(self.end_tf)
+        y += 54
 
         apply_btn = ui.Button(frame=(16, y, W - 32, 48))
         apply_btn.title = 'この期間で絞り込む'
@@ -359,12 +348,14 @@ class CustomPeriodView(ui.View):
         self.add_subview(apply_btn)
 
     def _apply(self, sender):
-        ds = self.start_picker.date
-        de = self.end_picker.date
-        s = (ds.strftime('%Y-%m-%d') if hasattr(ds, 'strftime')
-             else datetime.fromtimestamp(ds).strftime('%Y-%m-%d'))
-        e = (de.strftime('%Y-%m-%d') if hasattr(de, 'strftime')
-             else datetime.fromtimestamp(de).strftime('%Y-%m-%d'))
+        s = self.start_tf.text.strip()
+        e = self.end_tf.text.strip()
+        try:
+            datetime.strptime(s, '%Y-%m-%d')
+            datetime.strptime(e, '%Y-%m-%d')
+        except ValueError:
+            console.hud_alert('日付は YYYY-MM-DD 形式で入力してください', 'error', 2)
+            return
         if s > e:
             s, e = e, s
         self.on_apply(s, e)
@@ -440,16 +431,16 @@ class ExpenseListView(ui.View):
         self.stats_bg.add_subview(sep)
 
         # 統計ラベル群
-        self.total_lbl = ui.Label(frame=(16, 8, W - 32, 24))
+        self.total_lbl = ui.Label(frame=(16, H - STATS_H + 8, W - 32, 24))
         self.total_lbl.font = ('<system-bold>', 15)
         self.add_subview(self.total_lbl)
 
-        self.waste_lbl = ui.Label(frame=(16, 36, W - 32, 24))
+        self.waste_lbl = ui.Label(frame=(16, H - STATS_H + 36, W - 32, 24))
         self.waste_lbl.font = ('<system>', 14)
         self.waste_lbl.text_color = '#FF3B30'
         self.add_subview(self.waste_lbl)
 
-        self.cmpd_lbl = ui.Label(frame=(16, 64, W - 32, 60))
+        self.cmpd_lbl = ui.Label(frame=(16, H - STATS_H + 64, W - 32, 60))
         self.cmpd_lbl.font = ('<system>', 13)
         self.cmpd_lbl.text_color = '#FF9500'
         self.cmpd_lbl.number_of_lines = 0
